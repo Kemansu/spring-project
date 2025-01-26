@@ -1,7 +1,11 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "animal_types")
 public class AnimalTypes {
@@ -21,27 +25,4 @@ public class AnimalTypes {
     public AnimalTypes() {
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Animal getAnimal() {
-        return animal;
-    }
-
-    public void setAnimal(Animal animal) {
-        this.animal = animal;
-    }
-
-    public AnimalType getAnimalType() {
-        return animalType;
-    }
-
-    public void setAnimalType(AnimalType animalType) {
-        this.animalType = animalType;
-    }
 }

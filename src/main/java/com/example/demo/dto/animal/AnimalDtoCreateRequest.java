@@ -1,79 +1,45 @@
 package com.example.demo.dto.animal;
 
+import com.example.demo.enums.Gender;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@Setter
+@Getter
 public class AnimalDtoCreateRequest {
-    private List<Long> animalTypes;
 
+    @NotEmpty
+    @Valid
+    private List<@NotNull @Min(value = 1) Long> animalTypes;
+
+    @DecimalMin(inclusive = false, value = "0")
     private double weight;
 
+    @DecimalMin(inclusive = false, value = "0")
     private double length;
 
+
+    @DecimalMin(inclusive = false, value = "0")
     private double height;
 
-    private String gender;
+    @NotNull
+    private Gender gender;
 
+    @Min(value = 1)
     private int chipperId;
 
+    @Min(value = 1)
     private long chippingLocationId;
 
 
     public AnimalDtoCreateRequest() {
     }
 
-    public List<Long> getAnimalTypes() {
-        return animalTypes;
-    }
-
-    public void setAnimalTypes(List<Long> animalTypes) {
-        this.animalTypes = animalTypes;
-    }
-
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    public double getLength() {
-        return length;
-    }
-
-    public void setLength(double length) {
-        this.length = length;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
-    public void setHeight(double height) {
-        this.height = height;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public int getChipperId() {
-        return chipperId;
-    }
-
-    public void setChipperId(int chipperId) {
-        this.chipperId = chipperId;
-    }
-
-    public long getChippingLocationId() {
-        return chippingLocationId;
-    }
-
-    public void setChippingLocationId(long chippingLocationId) {
-        this.chippingLocationId = chippingLocationId;
-    }
 }

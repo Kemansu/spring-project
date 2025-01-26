@@ -1,13 +1,18 @@
 package com.example.demo.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.example.demo.enums.Gender;
+import com.example.demo.enums.LifeStatus;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "animal")
 public class Animal {
@@ -34,10 +39,12 @@ public class Animal {
     private double height;
 
     @Column(name = "gender")
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(name = "life_status")
-    private String lifeStatus;
+    @Enumerated(EnumType.STRING)
+    private LifeStatus lifeStatus;
 
     @Column(name = "chipping_date_time")
     private String chippingDateTime;
@@ -61,14 +68,6 @@ public class Animal {
     }
 
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public void addAnimalType(AnimalType animalType) {
         animalTypes.add(animalType);
     }
@@ -77,109 +76,12 @@ public class Animal {
         animalTypes.remove(animalType);
     }
 
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    public double getLength() {
-        return length;
-    }
-
-    public void setLength(double length) {
-        this.length = length;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
-    public void setHeight(double height) {
-        this.height = height;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getLifeStatus() {
-        return lifeStatus;
-    }
-
-    public void setLifeStatus(String lifeStatus) {
-        this.lifeStatus = lifeStatus;
-    }
-
-    public String getChippingDateTime() {
-        return chippingDateTime;
-    }
-
-    public void setChippingDateTime(String chippingDateTime) {
-        this.chippingDateTime = chippingDateTime;
-    }
-
-    public List<AnimalType> getAnimalTypes() {
-        return animalTypes;
-    }
-
-    public void setAnimalTypes(List<AnimalType> animalTypes) {
-        this.animalTypes = animalTypes;
-    }
-
-    public List<AnimalVisitedLocations> getVisitedLocations() {
-        return visitedLocations;
-    }
-
-    public void setVisitedLocation(List<AnimalVisitedLocations> visitedLocation) {
-        this.visitedLocations = visitedLocation;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-
-    public String getDeathDateTime() {
-        return deathDateTime;
-    }
-
-    public void setDeathDateTime(String deathDateTime) {
-        this.deathDateTime = deathDateTime;
-    }
-
-    public void setAccountId(int id) {
-        account.setId(id);
-    }
-
-    public void setLocationId(long id) {
-        location.setId(id);
-    }
-
-    public AnimalVisitedLocations addVisitedLocation(Location location) {
+    public void addVisitedLocation(Location location) {
         AnimalVisitedLocations visitedLocation = new AnimalVisitedLocations();
         visitedLocation.setAnimal(this);
         visitedLocation.setLocation(location);
         visitedLocation.setDateTimeOfVisitLocationPoint(String.valueOf(Instant.now()));
         visitedLocations.add(visitedLocation);
-        return visitedLocation;
     }
 
     public void removeVisitedLocation(AnimalVisitedLocations visitedLocation) {

@@ -1,76 +1,38 @@
 package com.example.demo.dto.animal;
 
+import com.example.demo.enums.Gender;
+import com.example.demo.enums.LifeStatus;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class AnimalDtoUpdateRequest {
+    @DecimalMin(inclusive = false, value = "0")
     private double weight;
 
+    @DecimalMin(inclusive = false, value = "0")
     private double length;
 
+    @DecimalMin(inclusive = false, value = "0")
     private double height;
 
-    private String gender;
+    @NotNull
+    private Gender gender;
 
-    private String lifeStatus;
-
+    @Min(value = 1)
     private int chipperId;
 
+    @Min(value = 1)
     private long chippingLocationId;
+
+    @NotNull
+    private LifeStatus lifeStatus;
 
     public AnimalDtoUpdateRequest() {
     }
 
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
-    public double getLength() {
-        return length;
-    }
-
-    public void setLength(double length) {
-        this.length = length;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
-    public void setHeight(double height) {
-        this.height = height;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getLifeStatus() {
-        return lifeStatus;
-    }
-
-    public void setLifeStatus(String lifeStatus) {
-        this.lifeStatus = lifeStatus;
-    }
-
-    public int getChipperId() {
-        return chipperId;
-    }
-
-    public void setChipperId(int chipperId) {
-        this.chipperId = chipperId;
-    }
-
-    public long getChippingLocationId() {
-        return chippingLocationId;
-    }
-
-    public void setChippingLocationId(long chippingLocationId) {
-        this.chippingLocationId = chippingLocationId;
-    }
 }

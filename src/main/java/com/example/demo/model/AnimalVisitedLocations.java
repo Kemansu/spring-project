@@ -1,10 +1,14 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 
 import java.time.ZonedDateTime;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "animal_visited_locations")
 public class AnimalVisitedLocations {
@@ -24,35 +28,6 @@ public class AnimalVisitedLocations {
     @Column(name = "date_time_of_visit_location_point", nullable = false)
     private String dateTimeOfVisitLocationPoint;
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Animal getAnimal() {
-        return animal;
-    }
-
-    public void setAnimal(Animal animal) {
-        this.animal = animal;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-
-    public String getDateTimeOfVisitLocationPoint() {
-        return dateTimeOfVisitLocationPoint;
-    }
-
-    public void setDateTimeOfVisitLocationPoint(String dateTimeOfVisitLocationPoint) {
-        this.dateTimeOfVisitLocationPoint = dateTimeOfVisitLocationPoint;
+    public AnimalVisitedLocations() {
     }
 }

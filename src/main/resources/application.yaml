@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5433/hibernate_db
+    username: postgres
+    password: password
+
+logging:
+  level:
+    org.springframework: INFO
+    com.example.demo: DEBUG
+
+  jpa:
+    properties:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      hibernate:
+        show_sql: true
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true

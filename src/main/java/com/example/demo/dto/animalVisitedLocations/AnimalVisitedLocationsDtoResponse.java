@@ -1,7 +1,11 @@
 package com.example.demo.dto.animalVisitedLocations;
 
 
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class AnimalVisitedLocationsDtoResponse {
 
     private long id;
@@ -13,27 +17,4 @@ public class AnimalVisitedLocationsDtoResponse {
     public AnimalVisitedLocationsDtoResponse() {
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String  getDateTimeOfVisitLocationPoint() {
-        return dateTimeOfVisitLocationPoint;
-    }
-
-    public void setDateTimeOfVisitLocationPoint(String dateTimeOfVisitLocationPoint) {
-        this.dateTimeOfVisitLocationPoint = dateTimeOfVisitLocationPoint;
-    }
-
-    public long getLocationPointId() {
-        return locationPointId;
-    }
-
-    public void setLocationPointId(long locationPointId) {
-        this.locationPointId = locationPointId;
-    }
 }

@@ -1,6 +1,11 @@
 package com.example.demo.dto.animalType;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class AnimalTypeDtoResponse {
 
     private long id;
@@ -10,19 +15,4 @@ public class AnimalTypeDtoResponse {
     public AnimalTypeDtoResponse() {
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 }

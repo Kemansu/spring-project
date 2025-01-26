@@ -12,11 +12,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MyUserDetailsService implements UserDetailsService {
+public class MyUserDetailsServiceImpl implements UserDetailsService {
 
     private AccountRepository accountRepository;
 
-    private static final Logger log = LoggerFactory.getLogger(MyUserDetailsService.class);
+    private static final Logger log = LoggerFactory.getLogger(MyUserDetailsServiceImpl.class);
 
 
     @Autowired
@@ -29,7 +29,7 @@ public class MyUserDetailsService implements UserDetailsService {
         return accountRepository.findAccountByEmail(username)
                 .map(MyUserDetails::new)
                 .orElseThrow(() -> {
-                    log.error("User not found: {}", username);
+                    log.debug("User not found: {}", username);
                     return new UsernameNotFoundException("User not found: " + username);
                 });
     }

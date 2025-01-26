@@ -3,98 +3,116 @@ package com.example.demo.service;
 import com.example.demo.dto.animal.AnimalDtoCreateRequest;
 import com.example.demo.dto.animal.AnimalDtoUpdateRequest;
 import com.example.demo.dto.animal.AnimalDtoUpdateTypeRequest;
+import com.example.demo.enums.Gender;
+import com.example.demo.enums.LifeStatus;
+import com.example.demo.exceptions.ConflictDataException;
+import com.example.demo.exceptions.ObjectNotFoundException;
+import com.example.demo.exceptions.RequestValidationException;
 import com.example.demo.model.Account;
 import com.example.demo.model.Animal;
 import com.example.demo.model.AnimalVisitedLocations;
 import com.example.demo.model.Location;
 import com.example.demo.repository.*;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.serviceInterface.AnimalService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-import java.text.ParseException;
 import java.time.Instant;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
-public class AnimalService {
+@RequiredArgsConstructor
+public class AnimalServiceImpl implements AnimalService {
     private final AnimalRepository animalRepository;
-
     private final AccountRepository accountRepository;
-
     private final LocationRepository locationRepository;
-
     private final AnimalTypeRepository animalTypeRepository;
 
-    private final AnimalVisitedLocationsRepository animalVisitedLocationsRepository;
 
-    private final ModelMapper modelMapper;
 
-    @Autowired
-    public AnimalService(AnimalRepository animalRepository,
-                         AccountRepository accountRepository,
-                         LocationRepository locationRepository,
-                         AnimalTypeRepository animalTypeRepository, AnimalVisitedLocationsRepository animalVisitedLocationsRepository,
-                         ModelMapper modelMapper) {
-        this.animalRepository = animalRepository;
-        this.accountRepository = accountRepository;
-        this.locationRepository = locationRepository;
-        this.animalTypeRepository = animalTypeRepository;
-        this.animalVisitedLocationsRepository = animalVisitedLocationsRepository;
-        this.modelMapper = modelMapper;
+
+    @Override
+    public Animal getAnimalById(long id) throws ObjectNotFoundException, RequestValidationException {
+        if (id <= 0) {
+            throw new RequestValidationException("");
+        }
+        return animalRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException(""));
     }
 
-    public Animal getAnimalById(long id) {
-        return animalRepository.findById(id).orElse(null);
-    }
-
+    @Override
     public List<Animal> searchAnimalList(String startDateTime,
                                          String endDateTime,
                                          Long chipperId,
                                          Long chippingLocationId,
-                                         String lifeStatus,
-                                         String gender,
+                                         LifeStatus lifeStatus,
+                                         Gender gender,
                                          Integer from,
-                                         Integer size) {
-        List<Animal> filtered = animalRepository.findAll().stream().filter(animal -> (
-                (startDateTime == null || isWithinRange(animal.getChippingDateTime(), startDateTime, endDateTime))  &&
-                        (chipperId == null || animal.getAccount().getId() == chipperId) &&
-                        (chippingLocationId == null || animal.getLocation().getId() == chippingLocationId) &&
-                        (lifeStatus == null || animal.getLifeStatus().equals(lifeStatus)) &&
-                        (gender == null || animal.getGender().equals(gender))
-                        )
-                )
-                .sorted(Comparator.comparing(Animal::getId))
-                .toList();
+                                         Integer size) throws RequestValidationException {
+
+        List<Animal> filtered = animalRepository.findAnimalsByParams(
+                startDateTime,
+                endDateTime,
+                chipperId,
+                chippingLocationId,
+                lifeStatus,
+                gender
+        );
 
         int toIndex = Math.min(filtered.size(), from + size);
         return filtered.subList(from, toIndex);
-
     }
 
+    @Override
     @Transactional
-    public Animal addAnimal(AnimalDtoCreateRequest animalDtoCreateRequest) throws ParseException {
+    public Animal addAnimal(AnimalDtoCreateRequest animalDtoCreateRequest)
+            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
+
+        if (!isAllForCreatingElementsExist(animalDtoCreateRequest.getAnimalTypes(),
+                animalDtoCreateRequest.getChipperId(),
+                animalDtoCreateRequest.getChippingLocationId())) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (animalDtoCreateRequest.getAnimalTypes().size() >
+                        new HashSet<>(animalDtoCreateRequest.getAnimalTypes()).size()) {
+            throw new ConflictDataException("");
+        }
+
         Animal animal = convertAnimalDtoRequestToAnimal(animalDtoCreateRequest);
-        System.out.println(animal.getChippingDateTime());
-        return animalRepository.save(animal);
 
+        return animalRepository.save(animal);
     }
 
+    @Override
     @Transactional
-    public Animal updateAnimal(long id, AnimalDtoUpdateRequest request) {
-        Animal existAnimal = animalRepository.findById(id).orElse(null);
+    public Animal updateAnimal(long animalId, AnimalDtoUpdateRequest request)
+            throws RequestValidationException, ObjectNotFoundException {
+
+        if (!isAllForUpdatingElementsExist(animalId, request.getChipperId(), request.getChippingLocationId())) {
+            throw new ObjectNotFoundException("");
+        }
+
+        boolean isChippingLocationIdEqualsFirstVisitedLocation = !(animalRepository.findById(animalId).get().getVisitedLocations().isEmpty() || request.getChippingLocationId() != animalRepository.findById(animalId).get().getVisitedLocations().get(0).getLocation().getId());
+
+        if (isChippingLocationIdEqualsFirstVisitedLocation) {
+            throw new RequestValidationException("");
+        }
+
+
+
+        Animal existAnimal = animalRepository.findById(animalId).get();
 
         existAnimal.setWeight(request.getWeight());
         existAnimal.setLength(request.getLength());
         existAnimal.setHeight(request.getHeight());
-        existAnimal.setGender(request.getGender());
+        existAnimal.setGender((request.getGender()));
 
         existAnimal.setLifeStatus(request.getLifeStatus());
-        if (request.getLifeStatus().equals("DEAD")) {
+        if (request.getLifeStatus().equals(LifeStatus.DEAD)) {
             existAnimal.setDeathDateTime(String.valueOf(Instant.now()));
         }
 
@@ -104,22 +122,48 @@ public class AnimalService {
         return animalRepository.save(existAnimal);
     }
 
+    @Override
     @Transactional
-    public void deleteAnimal(long id) {
-        animalRepository.deleteById(id);
+    public void deleteAnimal(long animalId) throws RequestValidationException, ObjectNotFoundException {
+        if (!isValideDeleteRequest(animalId)) {
+            throw new RequestValidationException("");
+        }
+        animalRepository.deleteById(animalId);
     }
 
+    @Override
     @Transactional
-    public Animal addAnimalType(long animalId, long typeId) {
-        Animal existAnimal = animalRepository.findById(animalId).orElse(null);
+    public Animal addAnimalType(long animalId, long typeId)
+            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
 
-        existAnimal.addAnimalType(animalTypeRepository.findById(typeId).orElse(null));
+        if (!isAllForAddingTypeElementsExist(animalId, typeId)) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (isTypeIdInAnimal(animalId, typeId)) {
+            throw new ConflictDataException("");
+        }
+
+        Animal existAnimal = animalRepository.findById(animalId).get();
+
+        existAnimal.addAnimalType(animalTypeRepository.findById(typeId).get());
         return animalRepository.save(existAnimal);
     }
 
+    @Override
     @Transactional
-    public Animal updateAnimalType(long animalId, AnimalDtoUpdateTypeRequest request) {
-        Animal existAnimal = animalRepository.findById(animalId).orElse(null);
+    public Animal updateAnimalType(long animalId, AnimalDtoUpdateTypeRequest request)
+            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
+
+        if (!isAllForUpdateTypeExist(animalId, request.getOldTypeId(), request.getNewTypeId())) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (isAlreadyInAnimal(animalId, request.getNewTypeId())) {
+            throw new ConflictDataException("");
+        }
+
+        Animal existAnimal = animalRepository.findById(animalId).get();
 
         existAnimal.getAnimalTypes().set(
                 existAnimal.getAnimalTypes().indexOf(
@@ -127,86 +171,56 @@ public class AnimalService {
                                 .stream()
                                 .filter(type -> type.getId() == request.getOldTypeId())
                                 .findFirst().get()
-                ), animalTypeRepository.findById(request.getNewTypeId()).orElse(null));
+                ), animalTypeRepository.findById(request.getNewTypeId()).get());
 
         return animalRepository.save(existAnimal);
     }
 
+    @Override
     @Transactional
-    public Animal deleteAnimalType(long animalId, long typeId) {
-        Animal existAnimal = animalRepository.findById(animalId).orElse(null);
+    public Animal deleteAnimalType(long animalId, long typeId)
+            throws RequestValidationException, ObjectNotFoundException {
 
-        existAnimal.removeAnimalType(animalTypeRepository.findById(typeId).orElse(null));
+        if (!isAllForDeletingExist(animalId, typeId)) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (!isAnimalHasTypes(animalId)) {
+            throw new RequestValidationException("");
+        }
+
+        Animal existAnimal = animalRepository.findById(animalId).get();
+
+        existAnimal.removeAnimalType(animalTypeRepository.findById(typeId).get());
         return animalRepository.save(existAnimal);
     }
 
-    public boolean isValideAnimalCreateRequest(AnimalDtoCreateRequest request) {
-        return (request.getAnimalTypes() != null) &&
-                (!request.getAnimalTypes().isEmpty()) &&
-                (!request.getAnimalTypes().contains(null)) &&
-                (request.getAnimalTypes().stream().noneMatch(type -> type <= 0)) &&
-                (request.getWeight() > 0) &&
-                (request.getLength() > 0) &&
-                (request.getHeight() > 0) &&
-                (request.getGender() != null) &&
-                (request.getGender().equals("MALE") ||
-                        request.getGender().equals("FEMALE") ||
-                        request.getGender().equals("OTHER")
-                ) &&
-                (request.getChipperId() > 0) &&
-                (request.getChippingLocationId() > 0);
-    }
-
-    public boolean isValideAnimalUpdateRequest(AnimalDtoUpdateRequest request, long animalId) {
-        return (request.getWeight() > 0) &&
-                (request.getLength() > 0) &&
-                (request.getHeight() > 0) &&
-                (request.getGender() != null) &&
-                (request.getGender().equals("MALE") ||
-                        request.getGender().equals("FEMALE") ||
-                        request.getGender().equals("OTHER")
-                ) &&
-                (request.getLifeStatus() != null) &&
-                (request.getLifeStatus().equals("ALIVE") || request.getLifeStatus().equals("DEAD")) &&
-                (request.getChipperId() > 0) &&
-                (request.getChippingLocationId() > 0) &&
-                !(request.getLifeStatus().equals("ALIVE") && animalRepository.findById(animalId).get().getLifeStatus().equals("DEAD")) &&
-                (animalRepository.findById(animalId).get().getVisitedLocations().isEmpty() || request.getChippingLocationId() != animalRepository.findById(animalId).get().getVisitedLocations().get(0).getLocation().getId());
-    }
-
-    public boolean isValideAnimalSearchRequest(Long chipperId,
-                                               Long chippingLocationId,
-                                               String lifeStatus,
-                                               String gender,
-                                               Integer from,
-                                               Integer size) {
-        return (from == null || from >= 0) &&
-                (size == null || size > 0) &&
-                (chipperId == null || chipperId > 0) &&
-                (chippingLocationId == null || chippingLocationId > 0) &&
-                (lifeStatus == null || lifeStatus.equals("ALIVE") || lifeStatus.equals("DEAD")) &&
-                (gender == null || gender.equals("MALE") || gender.equals("FEMALE") || gender.equals("OTHER"));
-    }
-
+    @Override
     public boolean isValideDeleteRequest(long animalId) {
-        List<AnimalVisitedLocations> visitedLocation = animalRepository.findById(animalId).get().getVisitedLocations();
+        List<AnimalVisitedLocations> visitedLocation = animalRepository
+                .findById(animalId)
+                .orElseThrow(() -> new ObjectNotFoundException(""))
+                .getVisitedLocations();
 
         return (visitedLocation.isEmpty());
     }
 
+    @Override
     public boolean isAllForCreatingElementsExist(List<Long> animalTypes,
                                                  int chipperId,
                                                  long chippingLocationId) {
+
 
         return (animalTypes
                 .stream()
                 .filter(type -> animalTypeRepository.findById(type).orElse(null) == null)
                 .findFirst().isEmpty()) &&
                 (accountRepository.existsById(chipperId) &&
-                (locationRepository.existsById(chippingLocationId)));
+                        (locationRepository.existsById(chippingLocationId)));
 
     }
 
+    @Override
     public boolean isAllForUpdatingElementsExist(long animalId,
                                                  int chipperId,
                                                  long chippingLocationId) {
@@ -217,14 +231,16 @@ public class AnimalService {
 
     }
 
+    @Override
     public boolean isAllForAddingTypeElementsExist(long animalId,
-                                                 long typeId) {
+                                                   long typeId) {
 
         return (animalRepository.existsById(animalId)) &&
                 (animalTypeRepository.existsById(typeId));
 
     }
 
+    @Override
     public boolean isAllForUpdateTypeExist(long animalId,
                                            long oldType,
                                            long newType) {
@@ -241,6 +257,8 @@ public class AnimalService {
                                         .get())
                 );
     }
+
+    @Override
     public boolean isAlreadyInAnimal(long animalId,
                                      long newTypeId) {
         return (animalRepository
@@ -254,6 +272,7 @@ public class AnimalService {
                 ));
     }
 
+    @Override
     public boolean isTypeIdInAnimal(long animalId,
                                     long typeId) {
         return (animalRepository.
@@ -267,7 +286,7 @@ public class AnimalService {
                 ));
     }
 
-
+    @Override
     public Animal convertAnimalDtoRequestToAnimal(AnimalDtoCreateRequest request) {
         Animal animal = new Animal();
         Location location = locationRepository.findById(request.getChippingLocationId()).orElse(null);
@@ -279,11 +298,12 @@ public class AnimalService {
         animal.setWeight(request.getWeight());
         animal.setLength(request.getLength());
         animal.setHeight(request.getHeight());
-        animal.setLifeStatus("ALIVE");
+        animal.setLifeStatus(LifeStatus.ALIVE);
         animal.setGender(request.getGender());
         return animal;
     }
 
+    @Override
     public boolean isAnimalHasTypes(long animalId) {
         return (animalRepository
                 .findById(animalId)
@@ -291,6 +311,7 @@ public class AnimalService {
                 .getAnimalTypes().size() > 1);
     }
 
+    @Override
     public boolean isAllForDeletingExist(long animalId, long typeId) {
         return (animalRepository.existsById(animalId)) &&
                 (animalTypeRepository.existsById(typeId)) &&
@@ -303,23 +324,36 @@ public class AnimalService {
                                         .findById(typeId)
                                         .get()
                         )
-        );
+                );
     }
 
-    public boolean isAnimalExists(long animalId) {
-        return animalRepository.existsById(animalId);
-    }
-
+    @Override
     public boolean isAnimalAlive(long animalId) {
         return animalRepository
                 .findById(animalId)
                 .get()
                 .getLifeStatus()
-                .equals("ALIVE");
+                .equals(LifeStatus.ALIVE);
     }
 
+    @Override
     @Transactional
-    public void addAnimalVisitedLocation(long animalId, long locationId) {
+    public void addAnimalVisitedLocation(long animalId, long locationId)
+            throws ObjectNotFoundException, RequestValidationException{
+
+        if (animalId > 0 &&
+                locationId > 0 &&
+                (!animalRepository.existsById(animalId) || !locationRepository.existsById(locationId))) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (animalId <= 0 ||
+                locationId <= 0 ||
+                !isAnimalAlive(animalId) ||
+                !isValideAnimalPosition(animalId, locationId)) {
+            throw new RequestValidationException("");
+        }
+
         Animal existAnimal = animalRepository.findById(animalId).get();
         Location location = locationRepository.findById(locationId).get();
 
@@ -328,6 +362,7 @@ public class AnimalService {
         animalRepository.save(existAnimal);
     }
 
+    @Override
     public boolean isValideAnimalPosition(long animalId, long pointId) {
         Animal animal = animalRepository.findById(animalId).get();
         Location location = locationRepository.findById(pointId).get();
@@ -339,25 +374,5 @@ public class AnimalService {
         return (animal.getVisitedLocations().isEmpty() || !animal.getVisitedLocations().get(animal.getVisitedLocations().size() - 1).getLocation().equals(location));
     }
 
-    public static boolean isWithinRange(String chippingDateTimeString, String startDateTimeString, String endDateTimeString) {
-        try {
-            // Преобразуем строки в Instant
-            Instant chippingDateTime = Instant.parse(chippingDateTimeString);
-            Instant startDateTime = startDateTimeString != null ? Instant.parse(startDateTimeString) : null;
-            Instant endDateTime = endDateTimeString != null ? Instant.parse(endDateTimeString) : null;
-
-            // Выполняем сравнение
-            return (startDateTime == null || chippingDateTime.isAfter(startDateTime)) &&
-                    (endDateTime == null || chippingDateTime.isBefore(endDateTime));
-        } catch (Exception e) {
-            // Обработка ошибок при парсинге
-            System.err.println("Invalid date format: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean existAnimalsByChipper(Account account) {
-        return animalRepository.existsByAccount(account);
-    }
 
 }
