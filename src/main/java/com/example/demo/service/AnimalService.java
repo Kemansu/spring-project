@@ -1,4 +1,4 @@
-package com.example.demo.serviceInterface;
+package com.example.demo.service;
 
 import com.example.demo.dto.animal.AnimalDtoCreateRequest;
 import com.example.demo.dto.animal.AnimalDtoUpdateRequest;
@@ -55,8 +55,6 @@ public interface AnimalService {
     boolean isAlreadyInAnimal(long animalId, long newTypeId);
 
     boolean isTypeIdInAnimal(long animalId, long typeId);
-
-    Animal convertAnimalDtoRequestToAnimal(AnimalDtoCreateRequest request);
 
     boolean isAnimalHasTypes(long animalId);
 

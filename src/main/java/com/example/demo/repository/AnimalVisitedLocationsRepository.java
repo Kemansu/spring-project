@@ -12,6 +12,7 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AnimalVisitedLocationsRepository extends JpaRepository<AnimalVisitedLocations, Long> {

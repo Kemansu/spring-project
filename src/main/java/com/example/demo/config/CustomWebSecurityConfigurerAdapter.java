@@ -1,7 +1,7 @@
 package com.example.demo.config;
 
 import com.example.demo.security.MyBasicAuthenticationEntryPoint;
-import com.example.demo.service.MyUserDetailsServiceImpl;
+import com.example.demo.service.impl.MyUserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +36,7 @@ public class CustomWebSecurityConfigurerAdapter {
                         expressionInterceptUrlRegistry
                                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/animals/**", "/animals/search", "/locations/**").permitAll()
                                 .requestMatchers("/registration").permitAll()
+                                .requestMatchers("/v3/api-docs/**").permitAll()
                                 .anyRequest().authenticated())
                 .httpBasic(httpSecurityHttpBasicConfigurer ->
                         httpSecurityHttpBasicConfigurer.authenticationEntryPoint(authenticationEntryPoint))

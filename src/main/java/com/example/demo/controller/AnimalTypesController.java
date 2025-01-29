@@ -1,4 +1,4 @@
-package com.example.demo.controllerInterface;
+package com.example.demo.controller;
 
 import com.example.demo.dto.animalType.AnimalTypeDtoRequest;
 import com.example.demo.dto.animalType.AnimalTypeDtoResponse;
@@ -22,6 +22,4 @@ public interface AnimalTypesController {
 
     @DeleteMapping("/{typeId}")
     ResponseEntity<String> deleteAnimalType(@PathVariable @Min(value = 1) long typeId);
-
-    AnimalTypeDtoResponse convertAnimalTypeToAnimalTypeDtoResponse(AnimalType animalType);
 }

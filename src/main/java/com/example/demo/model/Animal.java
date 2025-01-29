@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Setter
@@ -90,5 +91,9 @@ public class Animal {
 
     public void removeVisitedLocation(int index) {
         visitedLocations.remove(index);
+    }
+
+    public List<AnimalVisitedLocations> getVisitedLocations() {
+        return visitedLocations.stream().sorted(Comparator.comparing(AnimalVisitedLocations::getDateTimeOfVisitLocationPoint)).toList();
     }
 }

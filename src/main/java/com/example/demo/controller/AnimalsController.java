@@ -1,4 +1,4 @@
-package com.example.demo.controllerInterface;
+package com.example.demo.controller;
 
 import com.example.demo.dto.animal.*;
 import com.example.demo.enums.Gender;
@@ -37,7 +37,7 @@ public interface AnimalsController {
                                    @RequestBody @Valid AnimalDtoUpdateRequest request);
 
     @DeleteMapping("/{animalId}")
-    ResponseEntity<String> deleteAnimal(@PathVariable @Min(value = 1) long animalId);
+    ResponseEntity<Void> deleteAnimal(@PathVariable @Min(value = 1) long animalId);
 
     @PostMapping("/{animalId}/types/{typeId}")
     ResponseEntity<AnimalDtoResponse> addAnimalType(@PathVariable @Min(value = 1) long animalId,
@@ -50,6 +50,4 @@ public interface AnimalsController {
     @DeleteMapping("/{animalId}/types/{typeId}")
     ResponseEntity<AnimalDtoResponse> deleteAnimalType(@PathVariable @Min(value = 1) long animalId,
                                        @PathVariable @Min(value = 1) long typeId);
-
-    AnimalDtoResponse convertAnimalToAnimalDtoResponse(Animal animal);
 }

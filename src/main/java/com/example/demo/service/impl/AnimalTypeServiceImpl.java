@@ -1,17 +1,15 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.dto.animalType.AnimalTypeDtoRequest;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
+import com.example.demo.mapper.AnimalTypesMapper;
 import com.example.demo.model.AnimalType;
 import com.example.demo.repository.AnimalTypeRepository;
 import com.example.demo.repository.AnimalTypesRepository;
-import com.example.demo.serviceInterface.AnimalTypeService;
+import com.example.demo.service.AnimalTypeService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +22,7 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
 
     private final AnimalTypesRepository animalTypesRepository;
 
-    private final ModelMapper modelMapper;
+    private final AnimalTypesMapper animalTypesMapper;
 
 
     @Override
@@ -45,7 +43,7 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
             throw new ConflictDataException("");
         }
 
-        return animalTypeRepository.save(convertAnimalTypeDtoRequestToAnimalType(request));
+        return animalTypeRepository.save(animalTypesMapper.toAnimalType(request));
     }
 
     @Override
@@ -58,7 +56,7 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
 
         AnimalType existsAnimalType = animalTypeRepository.findById(typeId).orElseThrow(() -> new ObjectNotFoundException(""));
 
-        existsAnimalType.setType(convertAnimalTypeDtoRequestToAnimalType(request).getType());
+        existsAnimalType.setType(animalTypesMapper.toAnimalType(request).getType());
 
         return animalTypeRepository.save(existsAnimalType);
     }
@@ -76,11 +74,6 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
         }
 
         animalTypeRepository.deleteById(typeId);
-    }
-
-    @Override
-    public AnimalType convertAnimalTypeDtoRequestToAnimalType(AnimalTypeDtoRequest animalTypeDtoRequest) {
-        return modelMapper.map(animalTypeDtoRequest, AnimalType.class);
     }
 
 

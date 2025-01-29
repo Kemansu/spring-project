@@ -1,20 +1,18 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.dto.location.LocationDtoRequest;
 import com.example.demo.dto.location.LocationDtoResponse;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
+import com.example.demo.mapper.LocationMapper;
 import com.example.demo.model.Location;
 import com.example.demo.repository.AnimalRepository;
 import com.example.demo.repository.AnimalVisitedLocationsRepository;
 import com.example.demo.repository.LocationRepository;
-import com.example.demo.serviceInterface.LocationService;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
+import com.example.demo.service.LocationService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -30,12 +28,12 @@ public class LocationServiceImpl implements LocationService {
 
     private final AnimalVisitedLocationsRepository animalVisitedLocationsRepository;
 
-    private final ModelMapper modelMapper;
+    private final LocationMapper locationMapper;
 
 
     @Override
     public LocationDtoResponse findLocationById(long id){
-        return convertLocationToLocationDtoResponse(
+        return locationMapper.toLocationDtoResponse(
                 locationRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException(""))
         );
     }
@@ -46,7 +44,7 @@ public class LocationServiceImpl implements LocationService {
         if (isExistsByLongitudeAndLatitude(request.getLongitude(), request.getLatitude())) {
             throw new ConflictDataException("");
         }
-        return convertLocationToLocationDtoResponse(locationRepository.save(convertrequestToLocation(request)));
+        return locationMapper.toLocationDtoResponse(locationRepository.save(locationMapper.toLocation(request)));
     }
 
     @Override
@@ -62,7 +60,7 @@ public class LocationServiceImpl implements LocationService {
         existLocation.setLatitude(request.getLatitude());
         existLocation.setLongitude(request.getLongitude());
 
-        return convertLocationToLocationDtoResponse(locationRepository.save(existLocation));
+        return locationMapper.toLocationDtoResponse(locationRepository.save(existLocation));
     }
 
     @Override
@@ -86,15 +84,5 @@ public class LocationServiceImpl implements LocationService {
     public boolean isLocationDependedOnAnimal(Location location) {
         return (animalVisitedLocationsRepository.existsByLocation(location)) ||
                 (animalRepository.existsByLocation(location));
-    }
-
-    @Override
-    public LocationDtoResponse convertLocationToLocationDtoResponse(Location location) {
-        return modelMapper.map(location, LocationDtoResponse.class);
-    }
-
-    @Override
-    public Location convertrequestToLocation(LocationDtoRequest request) {
-        return modelMapper.map(request, Location.class);
     }
 }

@@ -1,4 +1,4 @@
-package com.example.demo.serviceInterface;
+package com.example.demo.service;
 
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoRequest;
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoResponse;
@@ -26,7 +26,5 @@ public interface AnimalVisitedLocationsService {
 
     AnimalVisitedLocations findByAnimalIdAndLocationId(long animalId, long locationId);
 
-    AnimalVisitedLocationsDtoResponse convertAnimalVisitedLocationsDtoResponseToAnimalVisitedLocations(
-            AnimalVisitedLocations animalVisitedLocations);
 
 }

@@ -1,4 +1,4 @@
-package com.example.demo.controllerInterface;
+package com.example.demo.controller;
 
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoRequest;
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoResponse;
@@ -32,7 +32,4 @@ public interface AnimalVisitedLocationsController {
     @DeleteMapping("/{animalId}/locations/{visitedPointId}")
     ResponseEntity<String> deleteVisitedLocation(@PathVariable @Min(value = 1) long animalId,
                                             @PathVariable @Min(value = 1) long visitedPointId);
-
-    AnimalVisitedLocationsDtoResponse convertAnimalVisitedLocationsDtoResponseToAnimalVisitedLocations(
-            AnimalVisitedLocations animalVisitedLocations);
 }

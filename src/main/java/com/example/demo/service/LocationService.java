@@ -1,4 +1,4 @@
-package com.example.demo.serviceInterface;
+package com.example.demo.service;
 
 import com.example.demo.dto.location.LocationDtoRequest;
 import com.example.demo.dto.location.LocationDtoResponse;
@@ -18,8 +18,4 @@ public interface LocationService {
     boolean isExistsByLongitudeAndLatitude(Double longitude, Double latitude);
 
     boolean isLocationDependedOnAnimal(Location location);
-
-    LocationDtoResponse convertLocationToLocationDtoResponse(Location location);
-
-    Location convertrequestToLocation(LocationDtoRequest request);
 }

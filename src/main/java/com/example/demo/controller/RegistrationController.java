@@ -1,4 +1,4 @@
-package com.example.demo.controllerInterface;
+package com.example.demo.controller;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;

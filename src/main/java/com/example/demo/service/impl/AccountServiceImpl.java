@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;
@@ -6,12 +6,12 @@ import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ForbiddenException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
+import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.Account;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.AnimalRepository;
-import com.example.demo.serviceInterface.AccountService;
+import com.example.demo.service.AccountService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,7 +32,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final ModelMapper modelMapper;
+    private final AccountMapper accountMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
 
@@ -40,7 +40,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public AccountDtoResponse save(AccountDtoRequest accountDTORequest, Principal principal) {
-        Account account = convertAccountRegisterDTOToAccount(accountDTORequest);
+        Account account = accountMapper.toAccount(accountDTORequest);
         if (principal != null) {
             throw new ForbiddenException("");
         }
@@ -51,7 +51,7 @@ public class AccountServiceImpl implements AccountService {
 
         account.setPassword(passwordEncoder.encode(account.getPassword()));
 
-        return convertAccountToAccountDtoResponse(accountRepository.save(account));
+        return accountMapper.toAccountDtoResponse(accountRepository.save(account));
 
     }
     @Override
@@ -131,15 +131,5 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Account findAccountById(int accountId) throws RequestValidationException, ObjectNotFoundException{
         return accountRepository.findById(accountId).orElseThrow(() -> new ObjectNotFoundException(""));
-    }
-
-    @Override
-    public Account convertAccountRegisterDTOToAccount(AccountDtoRequest accountDTORequest) {
-        return modelMapper.map(accountDTORequest, Account.class);
-    }
-
-    @Override
-    public AccountDtoResponse convertAccountToAccountDtoResponse(Account account) {
-        return modelMapper.map(account, AccountDtoResponse.class);
     }
 }

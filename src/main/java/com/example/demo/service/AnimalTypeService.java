@@ -1,4 +1,4 @@
-package com.example.demo.serviceInterface;
+package com.example.demo.service;
 
 import com.example.demo.dto.animalType.AnimalTypeDtoRequest;
 import com.example.demo.model.AnimalType;
@@ -17,7 +17,5 @@ public interface AnimalTypeService {
     boolean isExistsAnimalType(String type);
 
     void deleteAnimalType(long id);
-
-    AnimalType convertAnimalTypeDtoRequestToAnimalType(AnimalTypeDtoRequest animalTypeDtoRequest);
 
 }

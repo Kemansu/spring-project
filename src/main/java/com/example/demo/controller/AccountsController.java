@@ -1,4 +1,4 @@
-package com.example.demo.controllerInterface;
+package com.example.demo.controller;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;
@@ -32,6 +32,4 @@ public interface AccountsController {
     @DeleteMapping("/{accountId}")
     ResponseEntity<String> deleteAccount(@PathVariable @Min(value = 1) int accountId,
                                     Principal principal);
-
-    AccountDtoResponse convertAccountToAccountDtoResponse(Account account);
 }

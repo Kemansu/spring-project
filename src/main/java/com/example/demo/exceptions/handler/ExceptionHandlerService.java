@@ -1,40 +1,16 @@
-package com.example.demo.controller;
+package com.example.demo.exceptions.handler;
 
-import com.example.demo.controllerInterface.RegistrationController;
-import com.example.demo.dto.account.AccountDtoRequest;
-import com.example.demo.dto.account.AccountDtoResponse;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ForbiddenException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
-import com.example.demo.serviceInterface.AccountService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
-
-@RestController
-@RequiredArgsConstructor
-public class RegistrationControllerImpl implements RegistrationController {
-
-
-    private final AccountService accountServiceImpl;
-
-
-
-    @Override
-    @PostMapping("/registration")
-    public ResponseEntity<AccountDtoResponse> register(@RequestBody @Valid AccountDtoRequest accountDTORequest,
-                                                       Principal principal) throws Exception {
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountServiceImpl.save(accountDTORequest, principal));
-    }
+@ControllerAdvice
+public class ExceptionHandlerService {
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<String> handleObjectNotFoundException(ObjectNotFoundException ex) {

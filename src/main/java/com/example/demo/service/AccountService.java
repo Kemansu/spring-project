@@ -1,4 +1,4 @@
-package com.example.demo.serviceInterface;
+package com.example.demo.service;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;
@@ -31,8 +31,4 @@ public interface AccountService {
 
     Account findAccountById(int id);
 
-
-    Account convertAccountRegisterDTOToAccount(AccountDtoRequest accountDTORequest);
-
-    AccountDtoResponse convertAccountToAccountDtoResponse(Account account);
 }
