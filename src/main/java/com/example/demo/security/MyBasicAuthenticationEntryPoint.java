@@ -26,7 +26,6 @@ public class MyBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoi
             PrintWriter writer = response.getWriter();
             writer.println("HTTP Status 401 ");
         }
-
     }
 
     @Override

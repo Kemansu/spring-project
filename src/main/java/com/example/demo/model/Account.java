@@ -12,7 +12,7 @@ public class Account {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(name = "first_name")
     private String firstName;
@@ -25,8 +25,5 @@ public class Account {
 
     @Column(name = "password")
     private String password;
-
-    public Account() {
-    }
 
 }

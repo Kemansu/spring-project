@@ -11,6 +11,6 @@ public interface AccountMapper {
 
     AccountDtoResponse toAccountDtoResponse(Account account);
 
-    @Mapping(target = "id", expression = "java(0)")
+    @Mapping(target = "id", ignore = true)
     Account toAccount(AccountDtoRequest accountDTORequest);
 }

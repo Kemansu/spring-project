@@ -7,15 +7,12 @@ import jakarta.validation.constraints.Min;
 
 public interface LocationService {
 
-    LocationDtoResponse findLocationById(long id);
+    LocationDtoResponse findLocationById(Long id);
 
     LocationDtoResponse save(LocationDtoRequest request);
 
-    LocationDtoResponse updateLocation(long id, LocationDtoRequest locationDtoRequest);
+    LocationDtoResponse updateLocation(Long id, LocationDtoRequest locationDtoRequest);
 
-    void deleteLocation(long id);
+    void deleteLocation(Long id);
 
-    boolean isExistsByLongitudeAndLatitude(Double longitude, Double latitude);
-
-    boolean isLocationDependedOnAnimal(Location location);
 }

@@ -13,7 +13,4 @@ public class AnimalTypeDtoRequest {
     @NotBlank
     private String type;
 
-    public AnimalTypeDtoRequest() {
-    }
-
 }

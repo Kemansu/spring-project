@@ -11,6 +11,6 @@ public interface AnimalTypesMapper {
 
     AnimalTypeDtoResponse toAnimalTypeDtoResponse(AnimalType animalType);
 
-    @Mapping(target = "id", expression = "java(0)")
+    @Mapping(target = "id", ignore = true)
     AnimalType toAnimalType(AnimalTypeDtoRequest animalTypeDtoRequest);
 }

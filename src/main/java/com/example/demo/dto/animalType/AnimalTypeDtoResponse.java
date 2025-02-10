@@ -8,11 +8,8 @@ import lombok.Setter;
 @Getter
 public class AnimalTypeDtoResponse {
 
-    private long id;
+    private Long id;
 
     private String type;
-
-    public AnimalTypeDtoResponse() {
-    }
 
 }

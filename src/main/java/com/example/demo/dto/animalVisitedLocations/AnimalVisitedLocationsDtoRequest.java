@@ -9,12 +9,9 @@ import lombok.Setter;
 public class AnimalVisitedLocationsDtoRequest {
 
     @Min(value = 1)
-    private long visitedLocationPointId;
+    private Long visitedLocationPointId;
 
     @Min(value = 1)
-    private long locationPointId;
-
-    public AnimalVisitedLocationsDtoRequest() {
-    }
+    private Long locationPointId;
 
 }

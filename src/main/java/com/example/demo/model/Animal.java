@@ -20,7 +20,7 @@ public class Animal {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @ManyToMany
     @JoinTable(
@@ -31,13 +31,13 @@ public class Animal {
     private List<AnimalType> animalTypes;
 
     @Column(name = "weight")
-    private double weight;
+    private Double weight;
 
     @Column(name = "length")
-    private double length;
+    private Double length;
 
     @Column(name = "height")
-    private double height;
+    private Double height;
 
     @Column(name = "gender")
     @Enumerated(EnumType.STRING)
@@ -64,9 +64,6 @@ public class Animal {
 
     @Column(name = "death_date_time")
     private String deathDateTime;
-
-    public Animal() {
-    }
 
 
     public void addAnimalType(AnimalType animalType) {

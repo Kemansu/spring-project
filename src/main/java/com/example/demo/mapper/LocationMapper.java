@@ -11,7 +11,7 @@ public interface LocationMapper {
 
     LocationDtoResponse toLocationDtoResponse(Location location);
 
-    @Mapping(target = "id", expression = "java(0)")
+    @Mapping(target = "id", ignore = true)
     Location toLocation(LocationDtoRequest request);
 
 }

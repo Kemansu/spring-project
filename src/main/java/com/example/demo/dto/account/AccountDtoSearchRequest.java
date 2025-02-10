@@ -1,18 +1,16 @@
 package com.example.demo.dto.account;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
 @Getter
-public class AccountDtoResponse {
-
-    private Integer id;
-
+@Setter
+@Builder
+public class AccountDtoSearchRequest {
     private String firstName;
-
     private String lastName;
-
     private String email;
-
+    private Integer from;
+    private Integer size;
 }

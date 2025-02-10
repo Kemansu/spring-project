@@ -11,28 +11,31 @@ import lombok.Setter;
 @Setter
 @Getter
 public class AnimalDtoUpdateRequest {
-    @DecimalMin(inclusive = false, value = "0")
-    private double weight;
 
+    @NotNull
     @DecimalMin(inclusive = false, value = "0")
-    private double length;
+    private Double weight;
 
+    @NotNull
     @DecimalMin(inclusive = false, value = "0")
-    private double height;
+    private Double length;
+
+    @NotNull
+    @DecimalMin(inclusive = false, value = "0")
+    private Double height;
 
     @NotNull
     private Gender gender;
 
+    @NotNull
     @Min(value = 1)
-    private int chipperId;
+    private Integer chipperId;
 
+    @NotNull
     @Min(value = 1)
-    private long chippingLocationId;
+    private Long chippingLocationId;
 
     @NotNull
     private LifeStatus lifeStatus;
-
-    public AnimalDtoUpdateRequest() {
-    }
 
 }

@@ -12,7 +12,7 @@ public class AnimalTypes {
 
     @Id
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @ManyToOne()
     @JoinColumn(name = "animal_id")
@@ -21,8 +21,5 @@ public class AnimalTypes {
     @ManyToOne()
     @JoinColumn(name = "animal_type_id")
     private AnimalType animalType;
-
-    public AnimalTypes() {
-    }
 
 }

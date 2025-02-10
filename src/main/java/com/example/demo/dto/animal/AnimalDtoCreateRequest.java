@@ -19,27 +19,28 @@ public class AnimalDtoCreateRequest {
     @Valid
     private List<@NotNull @Min(value = 1) Long> animalTypes;
 
+    @NotNull
     @DecimalMin(inclusive = false, value = "0")
-    private double weight;
+    private Double weight;
 
+    @NotNull
     @DecimalMin(inclusive = false, value = "0")
-    private double length;
+    private Double length;
 
 
+    @NotNull
     @DecimalMin(inclusive = false, value = "0")
-    private double height;
+    private Double height;
 
     @NotNull
     private Gender gender;
 
+    @NotNull
     @Min(value = 1)
-    private int chipperId;
+    private Integer chipperId;
 
+    @NotNull
     @Min(value = 1)
-    private long chippingLocationId;
-
-
-    public AnimalDtoCreateRequest() {
-    }
+    private Long chippingLocationId;
 
 }

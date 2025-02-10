@@ -37,6 +37,7 @@ public class CustomWebSecurityConfigurerAdapter {
                                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/animals/**", "/animals/search", "/locations/**").permitAll()
                                 .requestMatchers("/registration").permitAll()
                                 .requestMatchers("/v3/api-docs/**").permitAll()
+                                .requestMatchers("/v3/api-docs.yaml").permitAll()
                                 .anyRequest().authenticated())
                 .httpBasic(httpSecurityHttpBasicConfigurer ->
                         httpSecurityHttpBasicConfigurer.authenticationEntryPoint(authenticationEntryPoint))

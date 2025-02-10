@@ -25,7 +25,7 @@ public class MyUserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) {
         return accountRepository.findAccountByEmail(username)
                 .map(MyUserDetails::new)
                 .orElseThrow(() -> {

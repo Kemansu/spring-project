@@ -2,29 +2,21 @@ package com.example.demo.service;
 
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoRequest;
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoResponse;
+import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoSearchRequest;
 import com.example.demo.model.AnimalVisitedLocations;
 import java.util.List;
 
 public interface AnimalVisitedLocationsService {
 
-    List<AnimalVisitedLocationsDtoResponse> getAnimalVisitedLocations(long animalId,
-                                                           String startDateTime,
-                                                           String endDateTime,
-                                                           int from,
-                                                           int size);
+    List<AnimalVisitedLocationsDtoResponse> getAnimalVisitedLocations(
+            AnimalVisitedLocationsDtoSearchRequest dtoSearchRequest);
 
-    AnimalVisitedLocationsDtoResponse updateAnimalVisitedLocation(long animalId,
+    AnimalVisitedLocationsDtoResponse updateAnimalVisitedLocation(Long animalId,
                                                        AnimalVisitedLocationsDtoRequest request);
 
-    void deleteAnimalVisitedLocation(long animalId, long visitedPointId);
+    void deleteAnimalVisitedLocation(Long animalId, Long visitedPointId);
 
-    boolean isValideForUpdating(AnimalVisitedLocationsDtoRequest request, long animalId);
-
-    boolean isAllExistForUpdate(long animalId, AnimalVisitedLocationsDtoRequest request);
-
-    boolean isAllExistForDelete(long animalId, long visitedPointId);
-
-    AnimalVisitedLocations findByAnimalIdAndLocationId(long animalId, long locationId);
+    AnimalVisitedLocationsDtoResponse addAnimalVisitedLocation(Long animalId, Long locationId);
 
 
 }

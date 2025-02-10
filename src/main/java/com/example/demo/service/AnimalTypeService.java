@@ -1,21 +1,18 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.animalType.AnimalTypeDtoRequest;
+import com.example.demo.dto.animalType.AnimalTypeDtoResponse;
 import com.example.demo.model.AnimalType;
 
 
 public interface AnimalTypeService {
 
-    AnimalType getAnimalTypeById(long id);
+    AnimalTypeDtoResponse getAnimalTypeById(Long id);
 
-    boolean isDependsOnAnimal(AnimalType animalType);
+    AnimalTypeDtoResponse saveAnimalType(AnimalTypeDtoRequest request);
 
-    AnimalType saveAnimalType(AnimalTypeDtoRequest request);
+    AnimalTypeDtoResponse updateAnimalType(Long id, AnimalTypeDtoRequest request);
 
-    AnimalType updateAnimalType(long id, AnimalTypeDtoRequest request);
-
-    boolean isExistsAnimalType(String type);
-
-    void deleteAnimalType(long id);
+    void deleteAnimalType(Long id);
 
 }

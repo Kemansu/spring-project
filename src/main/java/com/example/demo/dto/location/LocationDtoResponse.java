@@ -7,13 +7,10 @@ import lombok.Setter;
 @Getter
 public class LocationDtoResponse {
 
-    private long id;
+    private Long id;
 
-    private double latitude;
+    private Double latitude;
 
-    private double longitude;
-
-    public LocationDtoResponse() {
-    }
+    private Double longitude;
 
 }

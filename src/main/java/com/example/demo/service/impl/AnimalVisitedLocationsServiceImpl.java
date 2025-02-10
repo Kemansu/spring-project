@@ -2,6 +2,8 @@ package com.example.demo.service.impl;
 
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoRequest;
 import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoResponse;
+import com.example.demo.dto.animalVisitedLocations.AnimalVisitedLocationsDtoSearchRequest;
+import com.example.demo.enums.LifeStatus;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
 import com.example.demo.mapper.AnimalVisitedLocationsMapper;
@@ -34,26 +36,24 @@ public class AnimalVisitedLocationsServiceImpl implements AnimalVisitedLocations
 
     
     @Override
-    public List<AnimalVisitedLocationsDtoResponse> getAnimalVisitedLocations( long animalId,
-                                                                   String startDateTime,
-                                                                   String endDateTime,
-                                                                   int from,
-                                                                   int size)
-            throws RequestValidationException, ObjectNotFoundException {
+    public List<AnimalVisitedLocationsDtoResponse> getAnimalVisitedLocations(
+            AnimalVisitedLocationsDtoSearchRequest request) {
+        boolean isAnimalExist = animalRepository.existsById(request.getAnimalId());
 
-        if (!animalRepository.existsById(animalId)) {
+        if (!isAnimalExist) {
             throw new ObjectNotFoundException("");
         }
 
         List<AnimalVisitedLocations> filtered = animalVisitedLocationsRepository
                 .findAnimalsVisitedLocationByParams(
-                        animalId,
-                        startDateTime,
-                        endDateTime
+                        request.getAnimalId(),
+                        request.getStartDateTime(),
+                        request.getEndDateTime()
                 );
 
-        int toIndex = Math.min(filtered.size(), from + size);
-        return filtered.subList(from, toIndex)
+        int toIndex = Math.min(filtered.size(), request.getFrom() + request.getSize());
+
+        return filtered.subList(request.getFrom(), toIndex)
                 .stream()
                 .map(visitedLocationsMapper::toAnimalVisitedLocationsDtoResponse)
                 .toList();
@@ -61,23 +61,33 @@ public class AnimalVisitedLocationsServiceImpl implements AnimalVisitedLocations
 
     @Override
     @Transactional
-    public AnimalVisitedLocationsDtoResponse updateAnimalVisitedLocation(long animalId,
-                                                              AnimalVisitedLocationsDtoRequest request)
-            throws ObjectNotFoundException, RequestValidationException{
+    public AnimalVisitedLocationsDtoResponse updateAnimalVisitedLocation(Long animalId,
+                                                              AnimalVisitedLocationsDtoRequest request) {
 
-        if (!isAllExistForUpdate(animalId, request)) {
-            throw new ObjectNotFoundException("");
-        }
-
-        if (!isValideForUpdating(request, animalId)) {
-            throw new RequestValidationException("");
-        }
+        var animal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
 
         var existAnimalLocation = animalVisitedLocationsRepository
                 .findById(request.getVisitedLocationPointId())
-                .get();
+                .orElseThrow(() -> new ObjectNotFoundException(""));
 
-        existAnimalLocation.setLocation(locationRepository.findById(request.getLocationPointId()).get());
+        var newLocation = locationRepository
+                .findById(request.getLocationPointId())
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        boolean isAnimalContainsLocation = animal.getVisitedLocations()
+                .contains(existAnimalLocation);
+
+
+        if (!isAnimalContainsLocation) {
+            throw new ObjectNotFoundException("");
+        }
+
+        if (!isValideForUpdating(animal, existAnimalLocation, newLocation)) {
+            throw new RequestValidationException("");
+        }
+
+
+        existAnimalLocation.setLocation(newLocation);
         return visitedLocationsMapper.toAnimalVisitedLocationsDtoResponse(
                 animalVisitedLocationsRepository.save(existAnimalLocation)
         );
@@ -85,35 +95,40 @@ public class AnimalVisitedLocationsServiceImpl implements AnimalVisitedLocations
 
     @Override
     @Transactional
-    public void deleteAnimalVisitedLocation(long animalId, long visitedPointId)
-            throws RequestValidationException, ObjectNotFoundException {
+    public void deleteAnimalVisitedLocation(Long animalId, Long visitedPointId) {
 
-        if (!isAllExistForDelete(animalId, visitedPointId)) {
+        var animal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
+
+        var existAnimalLocation = animalVisitedLocationsRepository
+                .findById(visitedPointId)
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        boolean isAnimalContainsLocation = animal.getVisitedLocations()
+                .contains(existAnimalLocation);
+
+        if (!isAnimalContainsLocation) {
             throw new ObjectNotFoundException("");
         }
 
-        var animal = animalRepository.findById(animalId).get();
+        animal.removeVisitedLocation(existAnimalLocation);
 
-        animal.removeVisitedLocation(animalVisitedLocationsRepository.findById(visitedPointId).get());
+        boolean isFirstLocationNotChipping = !animal.getVisitedLocations().isEmpty() &&
+                animal.getVisitedLocations().get(0).getLocation().equals(animal.getLocation());
 
-        if (!animal.getVisitedLocations().isEmpty() && animal.getVisitedLocations().get(0).getLocation().equals(animal.getLocation())) {
+        if (isFirstLocationNotChipping) {
             animal.removeVisitedLocation(0);
         }
     }
 
-    @Override
-    public boolean isValideForUpdating(AnimalVisitedLocationsDtoRequest request, long animalId) {
-        var animal = animalRepository.findById(animalId).get();
-        var animalVisitedLocations = animalVisitedLocationsRepository.findById(request.getVisitedLocationPointId()).get();
-
-        Location newLocation = locationRepository.findById(request.getLocationPointId()).get();
+    private boolean isValideForUpdating(Animal animal,
+                                        AnimalVisitedLocations animalVisitedLocations,
+                                        Location newLocation) {
         Location oldLocation = animalVisitedLocations.getLocation();
 
         Location firstLocation = animal.getVisitedLocations()
                 .stream()
-                .sorted(Comparator.comparing(AnimalVisitedLocations::getId))
-                .findFirst()
-                .get()
+                .min(Comparator.comparing(AnimalVisitedLocations::getId))
+                .orElseThrow(() -> new ObjectNotFoundException(""))
                 .getLocation();
 
         // Находим индекс объекта
@@ -121,41 +136,67 @@ public class AnimalVisitedLocationsServiceImpl implements AnimalVisitedLocations
 
         boolean matchesPrevious = index > 0 &&
                 animal.getVisitedLocations().get(index - 1).getLocation().equals(newLocation); // Сравнение с предыдущим
+
         boolean matchesNext = index < animal.getVisitedLocations().size() - 1 &&
                 animal.getVisitedLocations().get(index + 1).getLocation().equals(newLocation); // Сравнение со следующим
-        return !(oldLocation.equals(firstLocation) && newLocation.equals(animal.getLocation())) &&
+
+        boolean isReplacingFirstLocationOnChipping = oldLocation.equals(firstLocation) &&
+                newLocation.equals(animal.getLocation());
+
+        return (!isReplacingFirstLocationOnChipping) &&
                 (!newLocation.equals(oldLocation)) &&
                 (!matchesNext) &&
                 (!matchesPrevious);
     }
 
     @Override
-    public boolean isAllExistForUpdate(long animalId, AnimalVisitedLocationsDtoRequest request) {
-        Animal animal = animalRepository.findById(animalId).orElse(null);
-        return (animal != null) &&
-                (animalVisitedLocationsRepository.existsById(request.getVisitedLocationPointId())) &&
-                (animal.getVisitedLocations()
-                        .contains(animalVisitedLocationsRepository
-                                .findById(request.getVisitedLocationPointId()).get())) &&
-                (locationRepository.existsById(request.getLocationPointId()));
+    @Transactional
+    public AnimalVisitedLocationsDtoResponse addAnimalVisitedLocation(Long animalId, Long locationId) {
+
+
+        if (!isAnimalAlive(animalId) || !isValideAnimalPosition(animalId, locationId)) {
+            throw new RequestValidationException("");
+        }
+
+        Animal existAnimal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
+        Location location = locationRepository.findById(locationId).orElseThrow(() -> new ObjectNotFoundException(""));
+
+        existAnimal.addVisitedLocation(location);
+
+        return visitedLocationsMapper.toAnimalVisitedLocationsDtoResponse(
+                animalRepository.save(existAnimal).getVisitedLocations()
+                        .stream()
+                        .max(Comparator.comparing(AnimalVisitedLocations::getId))
+                        .orElseThrow(() -> new ObjectNotFoundException("")));
     }
 
-    @Override
-    public boolean isAllExistForDelete(long animalId, long visitedPointId) {
-        Animal animal = animalRepository.findById(animalId).orElse(null);
-        AnimalVisitedLocations visitedLocation = animalVisitedLocationsRepository.findById(visitedPointId).orElse(null);
-        return (animal != null) &&
-                (visitedLocation != null) &&
-                (animal.getVisitedLocations()
-                        .contains(visitedLocation));
+    private boolean isAnimalAlive(Long animalId) {
+        return LifeStatus.ALIVE.equals(animalRepository
+                .findById(animalId)
+                .orElseThrow(() -> new ObjectNotFoundException(""))
+                .getLifeStatus());
     }
 
-    @Override
-    public AnimalVisitedLocations findByAnimalIdAndLocationId(long animalId, long locationId) {
-        return animalVisitedLocationsRepository.findAnimalVisitedLocationsByAnimalIdAndLocationId(animalId, locationId).stream()
-                .sorted(Comparator.comparing(AnimalVisitedLocations::getId).reversed())
-                .findFirst()
-                .get();
+    private boolean isValideAnimalPosition(Long animalId, Long pointId) {
+        Animal animal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
+        Location location = locationRepository.findById(pointId).orElseThrow(() -> new ObjectNotFoundException(""));
+
+
+        boolean isAddingChippingLocation = animal.getVisitedLocations().isEmpty() &&
+                animal.getLocation().equals(location);
+
+        if (isAddingChippingLocation) {
+            return false;
+        }
+
+
+        return (animal.getVisitedLocations().isEmpty() ||
+                !animal.getVisitedLocations()
+                        .stream()
+                        .sorted(Comparator.comparing(AnimalVisitedLocations::getDateTimeOfVisitLocationPoint)).toList()
+                        .get(animal.getVisitedLocations().size() - 1)
+                        .getLocation()
+                        .equals(location));
     }
 
 }

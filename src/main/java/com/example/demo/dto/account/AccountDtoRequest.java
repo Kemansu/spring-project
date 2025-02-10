@@ -27,8 +27,4 @@ public class AccountDtoRequest {
     @NotBlank
     private String password;
 
-
-    public AccountDtoRequest() {
-    }
-
 }

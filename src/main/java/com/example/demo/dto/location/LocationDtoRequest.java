@@ -22,7 +22,4 @@ public class LocationDtoRequest {
     @Max(value = 180)
     private Double longitude;
 
-    public LocationDtoRequest() {
-    }
-
 }

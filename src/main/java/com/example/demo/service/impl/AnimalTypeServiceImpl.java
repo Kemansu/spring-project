@@ -1,6 +1,7 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.dto.animalType.AnimalTypeDtoRequest;
+import com.example.demo.dto.animalType.AnimalTypeDtoResponse;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
@@ -26,50 +27,57 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
 
 
     @Override
-    public AnimalType getAnimalTypeById(long typeId) throws ObjectNotFoundException, RequestValidationException {
-        return animalTypeRepository.findById(typeId).orElseThrow(() -> new ObjectNotFoundException(""));
+    public AnimalTypeDtoResponse getAnimalTypeById(Long typeId) {
+        return animalTypesMapper.toAnimalTypeDtoResponse(
+                animalTypeRepository
+                        .findById(typeId)
+                        .orElseThrow(() -> new ObjectNotFoundException(""))
+        );
     }
 
-    @Override
-    public boolean isDependsOnAnimal(AnimalType animalType) {
+    private boolean isDependsOnAnimal(AnimalType animalType) {
         return animalTypesRepository.existsByAnimalType(animalType);
     }
 
     @Override
     @Transactional
-    public AnimalType saveAnimalType(AnimalTypeDtoRequest request)
-            throws RequestValidationException, ConflictDataException {
+    public AnimalTypeDtoResponse saveAnimalType(AnimalTypeDtoRequest request) {
         if (isExistsAnimalType(request.getType())){
             throw new ConflictDataException("");
         }
 
-        return animalTypeRepository.save(animalTypesMapper.toAnimalType(request));
+        return animalTypesMapper
+                .toAnimalTypeDtoResponse(animalTypeRepository.save(animalTypesMapper.toAnimalType(request)));
     }
 
     @Override
     @Transactional
-    public AnimalType updateAnimalType(long typeId, AnimalTypeDtoRequest request)
-            throws RequestValidationException, ObjectNotFoundException, ConflictDataException{
-        if (isExistsAnimalType(request.getType())) {
+    public AnimalTypeDtoResponse updateAnimalType(Long typeId, AnimalTypeDtoRequest request) {
+
+        var existsAnimalType = animalTypeRepository
+                .findById(typeId)
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        if (isExistsAnimalType(request.getType())){
             throw new ConflictDataException("");
         }
 
-        AnimalType existsAnimalType = animalTypeRepository.findById(typeId).orElseThrow(() -> new ObjectNotFoundException(""));
-
         existsAnimalType.setType(animalTypesMapper.toAnimalType(request).getType());
 
-        return animalTypeRepository.save(existsAnimalType);
+        return animalTypesMapper.toAnimalTypeDtoResponse(animalTypeRepository.save(existsAnimalType));
     }
 
-    @Override
-    public boolean isExistsAnimalType(String type) {
+    private boolean isExistsAnimalType(String type) {
         return animalTypeRepository.existsAnimalTypeByType(type);
     }
 
     @Override
     @Transactional
-    public void deleteAnimalType(long typeId) throws RequestValidationException, ObjectNotFoundException {
-        if (isDependsOnAnimal(getAnimalTypeById(typeId))){
+    public void deleteAnimalType(Long typeId) {
+        if (isDependsOnAnimal(
+                animalTypeRepository
+                .findById(typeId)
+                .orElseThrow(() -> new ObjectNotFoundException("")))){
             throw new RequestValidationException("");
         }
 

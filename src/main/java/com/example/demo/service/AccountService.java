@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;
+import com.example.demo.dto.account.AccountDtoSearchRequest;
 import com.example.demo.model.Account;
 
 import java.security.Principal;
@@ -12,23 +13,14 @@ import java.util.List;
 public interface AccountService {
 
 
-    AccountDtoResponse save(AccountDtoRequest accountDTORequest, Principal principal) throws Exception;
+    AccountDtoResponse save(AccountDtoRequest accountDTORequest, Principal principal);
 
-    List<Account> searchAccount(String firstName,
-                                       String lastName,
-                                       String email,
-                                       int from,
-                                       int size);
+    List<AccountDtoResponse> searchAccount(AccountDtoSearchRequest request);
 
-    Account updateAccount(int accountId, AccountDtoRequest request, Principal principal);
+    AccountDtoResponse updateAccount(Integer accountId, AccountDtoRequest request, Principal principal);
 
+    void deleteAccount(Integer accountId, Principal principal);
 
-    void deleteAccount(int accountId, Principal principal);
-
-    boolean isAccountExist(int accountId);
-
-    boolean isAccountExistByEmail(String email);
-
-    Account findAccountById(int id);
+    AccountDtoResponse findAccountById(Integer id);
 
 }

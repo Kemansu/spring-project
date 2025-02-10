@@ -13,15 +13,15 @@ import java.util.List;
 @Setter
 @Getter
 public class AnimalDtoResponse {
-    private long id;
+    private Long id;
 
     private List<Long> animalTypes;
 
-    private double weight;
+    private Double weight;
 
-    private double length;
+    private Double length;
 
-    private double height;
+    private Double height;
 
     private Gender gender;
 
@@ -29,16 +29,12 @@ public class AnimalDtoResponse {
 
     private String chippingDateTime;
 
-    private int chipperId;
+    private Integer chipperId;
 
-    private long chippingLocationId;
+    private Long chippingLocationId;
 
     private List<Long> visitedLocations;
 
     private String deathDateTime;
-
-    public AnimalDtoResponse() {
-    }
-
 
 }

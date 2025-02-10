@@ -2,6 +2,7 @@ package com.example.demo.service.impl;
 
 import com.example.demo.dto.account.AccountDtoRequest;
 import com.example.demo.dto.account.AccountDtoResponse;
+import com.example.demo.dto.account.AccountDtoSearchRequest;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ForbiddenException;
 import com.example.demo.exceptions.ObjectNotFoundException;
@@ -41,7 +42,9 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountDtoResponse save(AccountDtoRequest accountDTORequest, Principal principal) {
         Account account = accountMapper.toAccount(accountDTORequest);
-        if (principal != null) {
+        boolean isUserAuthenticated = principal != null;
+
+        if (isUserAuthenticated) {
             throw new ForbiddenException("");
         }
 
@@ -55,63 +58,72 @@ public class AccountServiceImpl implements AccountService {
 
     }
     @Override
-    public List<Account> searchAccount(String firstName,
-                                       String lastName,
-                                       String email,
-                                       int from,
-                                       int size) throws RequestValidationException {
+    public List<AccountDtoResponse> searchAccount(AccountDtoSearchRequest request) {
         List<Account> filtered = accountRepository.findAccountsByParams(
-                firstName,
-                lastName,
-                email);
+                request.getFirstName(),
+                request.getLastName(),
+                request.getEmail());
 
         logger.debug("нашлось " + filtered.size() + " результатов");
 
-        int toIndex = Math.min(filtered.size(), from + size);
-        return filtered.subList(from, toIndex);
+
+
+        int toIndex = Math.min(filtered.size(), request.getFrom() + request.getSize());
+        return filtered.subList(request.getFrom(), toIndex)
+                .stream()
+                .map(accountMapper::toAccountDtoResponse)
+                .toList();
         
     }
 
     @Override
     @Transactional
-    public Account updateAccount(int accountId, AccountDtoRequest request, Principal principal)
-            throws RequestValidationException, ConflictDataException, ForbiddenException {
-        if (!request.getEmail().equals(principal.getName()) && isAccountExistByEmail(request.getEmail())) {
+    public AccountDtoResponse updateAccount(Integer accountId, AccountDtoRequest request, Principal principal) {
+        boolean isAccountEmailAlreadyInUse = !request.getEmail().equals(principal.getName()) &&
+                isAccountExistByEmail(request.getEmail());
+
+        Account existAccount = accountRepository.findById(accountId).orElseThrow(() -> new ForbiddenException(""));
+
+        boolean isUpdatingAccountBelongsToUser =
+                existAccount
+                .getEmail()
+                .equals(principal.getName());
+
+
+        if (isAccountEmailAlreadyInUse) {
             throw new ConflictDataException("");
         }
 
-        if (!isAccountExist(accountId) || !findAccountById(accountId).getEmail().equals(principal.getName())) {
+
+        if (!isUpdatingAccountBelongsToUser) {
             throw new ForbiddenException("");
         }
-
-
-
-        Account existAccount = accountRepository.findById(accountId).orElse(null);
 
         existAccount.setFirstName(request.getFirstName());
         existAccount.setLastName(request.getLastName());
         existAccount.setEmail(request.getEmail());
         existAccount.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return accountRepository.save(existAccount);
+        return accountMapper.toAccountDtoResponse(accountRepository.save(existAccount));
     }
 
     @Override
     @Transactional
-    public void deleteAccount(int accountId, Principal principal)
-            throws RequestValidationException, ForbiddenException{
+    public void deleteAccount(Integer accountId, Principal principal) {
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new ForbiddenException(""));
 
+        boolean isAccountBoundWithAnimal = animalRepository
+                .existsByAccount(account);
 
+        boolean isAccountBelongsToUser = account.getEmail().equals(principal.getName());
 
-        if (animalRepository
-                .existsByAccount(accountRepository.findById(accountId).orElseThrow(() -> new ForbiddenException("")))) {
+        if (isAccountBoundWithAnimal) {
             throw new RequestValidationException("");
         }
 
-        Account account = findAccountById(accountId);
 
 
-        if (account == null || !account.getEmail().equals(principal.getName())) {
+        if (!isAccountBelongsToUser) {
             throw new ForbiddenException("");
         }
 
@@ -119,17 +131,14 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public boolean isAccountExist(int accountId) {
-        return (accountRepository.existsById(accountId));
+    public AccountDtoResponse findAccountById(Integer accountId) {
+        return accountMapper.toAccountDtoResponse(accountRepository
+                .findById(accountId)
+                .orElseThrow(() -> new ObjectNotFoundException("")
+                ));
     }
 
-    @Override
-    public boolean isAccountExistByEmail(String email) {
+    private boolean isAccountExistByEmail(String email) {
         return (accountRepository.existsByEmail(email));
-    }
-
-    @Override
-    public Account findAccountById(int accountId) throws RequestValidationException, ObjectNotFoundException{
-        return accountRepository.findById(accountId).orElseThrow(() -> new ObjectNotFoundException(""));
     }
 }

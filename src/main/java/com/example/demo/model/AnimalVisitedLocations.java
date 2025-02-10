@@ -15,7 +15,7 @@ public class AnimalVisitedLocations {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "animal_id")
@@ -28,6 +28,4 @@ public class AnimalVisitedLocations {
     @Column(name = "date_time_of_visit_location_point", nullable = false)
     private String dateTimeOfVisitLocationPoint;
 
-    public AnimalVisitedLocations() {
-    }
 }

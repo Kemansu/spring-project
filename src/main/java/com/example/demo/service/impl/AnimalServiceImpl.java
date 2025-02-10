@@ -1,18 +1,12 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.dto.animal.AnimalDtoCreateRequest;
-import com.example.demo.dto.animal.AnimalDtoUpdateRequest;
-import com.example.demo.dto.animal.AnimalDtoUpdateTypeRequest;
-import com.example.demo.enums.Gender;
+import com.example.demo.dto.animal.*;
 import com.example.demo.enums.LifeStatus;
 import com.example.demo.exceptions.ConflictDataException;
 import com.example.demo.exceptions.ObjectNotFoundException;
 import com.example.demo.exceptions.RequestValidationException;
 import com.example.demo.mapper.AnimalMapper;
-import com.example.demo.model.Account;
-import com.example.demo.model.Animal;
-import com.example.demo.model.AnimalVisitedLocations;
-import com.example.demo.model.Location;
+import com.example.demo.model.*;
 import com.example.demo.repository.*;
 import com.example.demo.service.AnimalService;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -39,40 +33,32 @@ public class AnimalServiceImpl implements AnimalService {
 
 
     @Override
-    public Animal getAnimalById(long id) throws ObjectNotFoundException, RequestValidationException {
-        if (id <= 0) {
-            throw new RequestValidationException("");
-        }
+    public Animal getAnimalById(Long id) {
         return animalRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException(""));
     }
 
     @Override
-    public List<Animal> searchAnimalList(String startDateTime,
-                                         String endDateTime,
-                                         Long chipperId,
-                                         Long chippingLocationId,
-                                         LifeStatus lifeStatus,
-                                         Gender gender,
-                                         Integer from,
-                                         Integer size) throws RequestValidationException {
+    public List<AnimalDtoResponse> searchAnimalList(AnimalDtoSearchRequest request) {
 
         List<Animal> filtered = animalRepository.findAnimalsByParams(
-                startDateTime,
-                endDateTime,
-                chipperId,
-                chippingLocationId,
-                lifeStatus,
-                gender
+                request.getStartDateTime(),
+                request.getEndDateTime(),
+                request.getChipperId(),
+                request.getChippingLocationId(),
+                request.getLifeStatus(),
+                request.getGender()
         );
 
-        int toIndex = Math.min(filtered.size(), from + size);
-        return filtered.subList(from, toIndex);
+        int toIndex = Math.min(filtered.size(), request.getFrom() + request.getSize());
+        return filtered.subList(request.getFrom(), toIndex)
+                .stream()
+                .map(animalMapper::toAnimalDtoResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public Animal addAnimal(AnimalDtoCreateRequest request)
-            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
+    public AnimalDtoResponse addAnimal(AnimalDtoCreateRequest request) {
 
         if (!isAllForCreatingElementsExist(request.getAnimalTypes(),
                 request.getChipperId(),
@@ -80,34 +66,57 @@ public class AnimalServiceImpl implements AnimalService {
             throw new ObjectNotFoundException("");
         }
 
-        if (request.getAnimalTypes().size() >
-                        new HashSet<>(request.getAnimalTypes()).size()) {
+        boolean isAnimalTypesHasDuplicates = request.getAnimalTypes().size() >
+                request.getAnimalTypes().stream().distinct().toList().size();
+
+
+        if (isAnimalTypesHasDuplicates) {
             throw new ConflictDataException("");
         }
 
-        Animal animal = animalMapper.toAnimal(request, animalTypeRepository, accountRepository, locationRepository);
+        Animal animal = animalMapper.toAnimalForCreating(request);
 
-        return animalRepository.save(animal);
+        Location location = locationRepository
+                .findById(request.getChippingLocationId())
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        Account account = accountRepository
+                .findById(request.getChipperId())
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        animal.setAccount(account);
+        animal.setLocation(location);
+        animal.setAnimalTypes(animalTypeRepository.findAllById(request.getAnimalTypes()));
+        animal.setChippingDateTime(String.valueOf(Instant.now()));
+        animal.setLifeStatus(LifeStatus.ALIVE);
+
+        return animalMapper.toAnimalDtoResponse(animalRepository.save(animal));
     }
 
     @Override
     @Transactional
-    public Animal updateAnimal(long animalId, AnimalDtoUpdateRequest request)
-            throws RequestValidationException, ObjectNotFoundException {
+    public AnimalDtoResponse updateAnimal(Long animalId, AnimalDtoUpdateRequest request) {
 
         if (!isAllForUpdatingElementsExist(animalId, request.getChipperId(), request.getChippingLocationId())) {
             throw new ObjectNotFoundException("");
         }
 
-        boolean isChippingLocationIdEqualsFirstVisitedLocation = !(animalRepository.findById(animalId).get().getVisitedLocations().isEmpty() || request.getChippingLocationId() != animalRepository.findById(animalId).get().getVisitedLocations().get(0).getLocation().getId());
+        Animal existAnimal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
+
+        boolean isChippingLocationIdEqualsFirstVisitedLocation =
+                !(existAnimal
+                        .getVisitedLocations()
+                        .isEmpty() ||
+                        !Objects.equals(request.getChippingLocationId(), existAnimal
+                                .getVisitedLocations()
+                                .get(0)
+                                .getLocation()
+                                .getId()));
 
         if (isChippingLocationIdEqualsFirstVisitedLocation) {
             throw new RequestValidationException("");
         }
 
-
-
-        Animal existAnimal = animalRepository.findById(animalId).get();
 
         existAnimal.setWeight(request.getWeight());
         existAnimal.setLength(request.getLength());
@@ -115,19 +124,24 @@ public class AnimalServiceImpl implements AnimalService {
         existAnimal.setGender((request.getGender()));
 
         existAnimal.setLifeStatus(request.getLifeStatus());
-        if (request.getLifeStatus().equals(LifeStatus.DEAD)) {
+        if (LifeStatus.DEAD.equals(request.getLifeStatus())) {
             existAnimal.setDeathDateTime(String.valueOf(Instant.now()));
         }
 
-        existAnimal.setAccount(accountRepository.findById(request.getChipperId()).get());
-        existAnimal.setLocation(locationRepository.findById(request.getChippingLocationId()).get());
+        existAnimal.setAccount(accountRepository
+                .findById(request.getChipperId())
+                .orElseThrow(() -> new ObjectNotFoundException("")));
 
-        return animalRepository.save(existAnimal);
+        existAnimal.setLocation(locationRepository
+                .findById(request.getChippingLocationId())
+                .orElseThrow(() -> new ObjectNotFoundException("")));
+
+        return animalMapper.toAnimalDtoResponse(animalRepository.save(existAnimal));
     }
 
     @Override
     @Transactional
-    public void deleteAnimal(long animalId) throws RequestValidationException, ObjectNotFoundException {
+    public void deleteAnimal(Long animalId) {
         if (!isValideDeleteRequest(animalId)) {
             throw new RequestValidationException("");
         }
@@ -136,8 +150,7 @@ public class AnimalServiceImpl implements AnimalService {
 
     @Override
     @Transactional
-    public Animal addAnimalType(long animalId, long typeId)
-            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
+    public Animal addAnimalType(Long animalId, Long typeId) {
 
         if (!isAllForAddingTypeElementsExist(animalId, typeId)) {
             throw new ObjectNotFoundException("");
@@ -147,16 +160,20 @@ public class AnimalServiceImpl implements AnimalService {
             throw new ConflictDataException("");
         }
 
-        Animal existAnimal = animalRepository.findById(animalId).get();
+        Animal existAnimal = animalRepository
+                .findById(animalId)
+                .orElseThrow(() -> new ObjectNotFoundException(""));
 
-        existAnimal.addAnimalType(animalTypeRepository.findById(typeId).get());
+        existAnimal.addAnimalType(animalTypeRepository
+                .findById(typeId)
+                .orElseThrow(() -> new ObjectNotFoundException("")));
+
         return animalRepository.save(existAnimal);
     }
 
     @Override
     @Transactional
-    public Animal updateAnimalType(long animalId, AnimalDtoUpdateTypeRequest request)
-            throws RequestValidationException, ObjectNotFoundException, ConflictDataException {
+    public AnimalDtoResponse updateAnimalType(Long animalId, AnimalDtoUpdateTypeRequest request) {
 
         if (!isAllForUpdateTypeExist(animalId, request.getOldTypeId(), request.getNewTypeId())) {
             throw new ObjectNotFoundException("");
@@ -166,23 +183,26 @@ public class AnimalServiceImpl implements AnimalService {
             throw new ConflictDataException("");
         }
 
-        Animal existAnimal = animalRepository.findById(animalId).get();
+        Animal existAnimal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
 
-        existAnimal.getAnimalTypes().set(
-                existAnimal.getAnimalTypes().indexOf(
-                        existAnimal.getAnimalTypes()
-                                .stream()
-                                .filter(type -> type.getId() == request.getOldTypeId())
-                                .findFirst().get()
-                ), animalTypeRepository.findById(request.getNewTypeId()).get());
+        AnimalType newAnimalType = animalTypeRepository
+                .findById(request.getNewTypeId())
+                .orElseThrow(() -> new ObjectNotFoundException(""));
 
-        return animalRepository.save(existAnimal);
+        Integer indexOfUpdatingAnimalType = existAnimal.getAnimalTypes().indexOf(
+                existAnimal.getAnimalTypes()
+                        .stream()
+                        .filter(type -> type.getId().equals(request.getOldTypeId()))
+                        .findFirst().orElseThrow(() -> new ObjectNotFoundException("")));
+
+        existAnimal.getAnimalTypes().set(indexOfUpdatingAnimalType, newAnimalType);
+
+        return animalMapper.toAnimalDtoResponse(animalRepository.save(existAnimal));
     }
 
     @Override
     @Transactional
-    public Animal deleteAnimalType(long animalId, long typeId)
-            throws RequestValidationException, ObjectNotFoundException {
+    public AnimalDtoResponse deleteAnimalType(Long animalId, Long typeId) {
 
         if (!isAllForDeletingExist(animalId, typeId)) {
             throw new ObjectNotFoundException("");
@@ -192,14 +212,16 @@ public class AnimalServiceImpl implements AnimalService {
             throw new RequestValidationException("");
         }
 
-        Animal existAnimal = animalRepository.findById(animalId).get();
+        Animal existAnimal = animalRepository.findById(animalId).orElseThrow(() -> new ObjectNotFoundException(""));
 
-        existAnimal.removeAnimalType(animalTypeRepository.findById(typeId).get());
-        return animalRepository.save(existAnimal);
+        existAnimal.removeAnimalType(animalTypeRepository
+                .findById(typeId)
+                .orElseThrow(() -> new ObjectNotFoundException("")));
+
+        return animalMapper.toAnimalDtoResponse(animalRepository.save(existAnimal));
     }
 
-    @Override
-    public boolean isValideDeleteRequest(long animalId) {
+    public boolean isValideDeleteRequest(Long animalId) {
         List<AnimalVisitedLocations> visitedLocation = animalRepository
                 .findById(animalId)
                 .orElseThrow(() -> new ObjectNotFoundException(""))
@@ -208,25 +230,24 @@ public class AnimalServiceImpl implements AnimalService {
         return (visitedLocation.isEmpty());
     }
 
-    @Override
-    public boolean isAllForCreatingElementsExist(List<Long> animalTypes,
-                                                 int chipperId,
-                                                 long chippingLocationId) {
+
+    private boolean isAllForCreatingElementsExist(List<Long> animalTypes,
+                                                 Integer chipperId,
+                                                 Long chippingLocationId) {
 
 
         return (animalTypes
                 .stream()
-                .filter(type -> animalTypeRepository.findById(type).orElse(null) == null)
+                .filter(type -> !animalTypeRepository.existsById(type))
                 .findFirst().isEmpty()) &&
                 (accountRepository.existsById(chipperId) &&
                         (locationRepository.existsById(chippingLocationId)));
 
     }
 
-    @Override
-    public boolean isAllForUpdatingElementsExist(long animalId,
-                                                 int chipperId,
-                                                 long chippingLocationId) {
+    private boolean isAllForUpdatingElementsExist(Long animalId,
+                                                 Integer chipperId,
+                                                 Long chippingLocationId) {
 
         return (animalRepository.existsById(animalId)) &&
                 (accountRepository.existsById(chipperId) &&
@@ -234,133 +255,75 @@ public class AnimalServiceImpl implements AnimalService {
 
     }
 
-    @Override
-    public boolean isAllForAddingTypeElementsExist(long animalId,
-                                                   long typeId) {
+    private boolean isAllForAddingTypeElementsExist(Long animalId,
+                                                   Long typeId) {
 
         return (animalRepository.existsById(animalId)) &&
                 (animalTypeRepository.existsById(typeId));
 
     }
 
-    @Override
-    public boolean isAllForUpdateTypeExist(long animalId,
-                                           long oldType,
-                                           long newType) {
-        return (animalRepository.existsById(animalId)) &&
-                (animalTypeRepository.existsById(oldType)) &&
-                (animalTypeRepository.existsById(newType)) &&
+    private boolean isAllForUpdateTypeExist(Long animalId,
+                                           Long oldType,
+                                           Long newType) {
+        return (animalTypeRepository.existsById(newType)) &&
                 (animalRepository
                         .findById(animalId)
-                        .get()
+                        .orElseThrow(() -> new ObjectNotFoundException(""))
                         .getAnimalTypes()
                         .contains(
                                 animalTypeRepository
                                         .findById(oldType)
-                                        .get())
+                                        .orElseThrow(() -> new ObjectNotFoundException("")))
                 );
     }
 
-    @Override
-    public boolean isAlreadyInAnimal(long animalId,
-                                     long newTypeId) {
+    private boolean isAlreadyInAnimal(Long animalId,
+                                     Long newTypeId) {
         return (animalRepository
                 .findById(animalId)
-                .get()
+                .orElseThrow(() -> new ObjectNotFoundException(""))
                 .getAnimalTypes()
                 .contains(
                         animalTypeRepository
                                 .findById(newTypeId)
-                                .get()
+                                .orElseThrow(() -> new ObjectNotFoundException(""))
                 ));
     }
 
-    @Override
-    public boolean isTypeIdInAnimal(long animalId,
-                                    long typeId) {
+    private boolean isTypeIdInAnimal(Long animalId,
+                                    Long typeId) {
         return (animalRepository.
                 findById(animalId)
-                .get()
+                .orElseThrow(() -> new ObjectNotFoundException(""))
                 .getAnimalTypes()
                 .contains(
                         animalTypeRepository
                                 .findById(typeId)
-                                .get()
+                                .orElseThrow(() -> new ObjectNotFoundException(""))
                 ));
     }
 
-    @Override
-    public boolean isAnimalHasTypes(long animalId) {
+    private boolean isAnimalHasTypes(Long animalId) {
         return (animalRepository
                 .findById(animalId)
-                .get()
+                .orElseThrow(() -> new ObjectNotFoundException(""))
                 .getAnimalTypes().size() > 1);
     }
 
-    @Override
-    public boolean isAllForDeletingExist(long animalId, long typeId) {
-        return (animalRepository.existsById(animalId)) &&
-                (animalTypeRepository.existsById(typeId)) &&
-                (animalRepository
+    private boolean isAllForDeletingExist(Long animalId, Long typeId) {
+        return (animalRepository
                         .findById(animalId)
-                        .get()
+                        .orElseThrow(() -> new ObjectNotFoundException(""))
                         .getAnimalTypes()
                         .contains(
                                 animalTypeRepository
                                         .findById(typeId)
-                                        .get()
+                                        .orElseThrow(() -> new ObjectNotFoundException(""))
                         )
                 );
     }
 
-    @Override
-    public boolean isAnimalAlive(long animalId) {
-        return animalRepository
-                .findById(animalId)
-                .get()
-                .getLifeStatus()
-                .equals(LifeStatus.ALIVE);
-    }
-
-    @Override
-    @Transactional
-    public void addAnimalVisitedLocation(long animalId, long locationId)
-            throws ObjectNotFoundException, RequestValidationException{
-
-        if ((!animalRepository.existsById(animalId) || !locationRepository.existsById(locationId))) {
-            throw new ObjectNotFoundException("");
-        }
-
-        if (!isAnimalAlive(animalId) || !isValideAnimalPosition(animalId, locationId)) {
-            throw new RequestValidationException("");
-        }
-
-        Animal existAnimal = animalRepository.findById(animalId).get();
-        Location location = locationRepository.findById(locationId).get();
-
-        existAnimal.addVisitedLocation(location);
-
-        animalRepository.save(existAnimal);
-    }
-
-    @Override
-    public boolean isValideAnimalPosition(long animalId, long pointId) {
-        Animal animal = animalRepository.findById(animalId).get();
-        Location location = locationRepository.findById(pointId).get();
-
-        if (animal.getVisitedLocations().isEmpty() && animal.getLocation().equals(location)) {
-            return false;
-        }
-
-
-        return (animal.getVisitedLocations().isEmpty() ||
-                !animal.getVisitedLocations()
-                        .stream()
-                        .sorted(Comparator.comparing(AnimalVisitedLocations::getDateTimeOfVisitLocationPoint)).toList()
-                        .get(animal.getVisitedLocations().size() - 1)
-                        .getLocation()
-                        .equals(location));
-    }
 
 
 }

@@ -29,19 +29,8 @@ public class RegistrationControllerImpl implements RegistrationController {
 
 
     @Override
-    @PostMapping("/registration")
-    @Operation(
-            summary = "Зарегистрироваться",
-            description = "Регистрирует новых пользователй")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Запрос усешно выполнен"),
-            @ApiResponse(responseCode = "400", description = "Невалидные данные для регистрации"),
-            @ApiResponse(responseCode = "403", description = "Запрос от авторизованного аккаунта"),
-            @ApiResponse(responseCode = "409", description = "Аккаунт с таким email уже существует")
-    })
-    public ResponseEntity<AccountDtoResponse> register(@RequestBody @Valid AccountDtoRequest accountDTORequest,
-                                                       Principal principal) throws Exception {
-
+    public ResponseEntity<AccountDtoResponse> register(@RequestBody AccountDtoRequest accountDTORequest,
+                                                       Principal principal){
         return ResponseEntity.status(HttpStatus.CREATED).body(accountServiceImpl.save(accountDTORequest, principal));
     }
 

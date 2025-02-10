@@ -32,7 +32,7 @@ public class LocationServiceImpl implements LocationService {
 
 
     @Override
-    public LocationDtoResponse findLocationById(long id){
+    public LocationDtoResponse findLocationById(Long id){
         return locationMapper.toLocationDtoResponse(
                 locationRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException(""))
         );
@@ -40,17 +40,18 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     @Transactional
-    public LocationDtoResponse save(LocationDtoRequest request) throws RequestValidationException, ConflictDataException {
+    public LocationDtoResponse save(LocationDtoRequest request) {
+
         if (isExistsByLongitudeAndLatitude(request.getLongitude(), request.getLatitude())) {
             throw new ConflictDataException("");
         }
+
         return locationMapper.toLocationDtoResponse(locationRepository.save(locationMapper.toLocation(request)));
     }
 
     @Override
     @Transactional
-    public LocationDtoResponse updateLocation(long pointId, LocationDtoRequest request)
-            throws RequestValidationException, ConflictDataException{
+    public LocationDtoResponse updateLocation(Long pointId, LocationDtoRequest request) {
         Location existLocation = locationRepository.findById(pointId).orElseThrow(() -> new ObjectNotFoundException(""));
 
         if (isExistsByLongitudeAndLatitude(request.getLongitude(), request.getLatitude())) {
@@ -65,7 +66,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     @Transactional
-    public void deleteLocation(long pointId) throws ObjectNotFoundException, RequestValidationException {
+    public void deleteLocation(Long pointId) {
 
         if (isLocationDependedOnAnimal(
                 locationRepository.findById(pointId).orElseThrow(() -> new ObjectNotFoundException("")))) {
@@ -75,13 +76,11 @@ public class LocationServiceImpl implements LocationService {
         locationRepository.deleteById(pointId);
     }
 
-    @Override
-    public boolean isExistsByLongitudeAndLatitude(Double longitude, Double latitude) {
+    private boolean isExistsByLongitudeAndLatitude(Double longitude, Double latitude) {
         return locationRepository.existsByLongitudeAndLatitude(longitude, latitude);
     }
 
-    @Override
-    public boolean isLocationDependedOnAnimal(Location location) {
+    private boolean isLocationDependedOnAnimal(Location location) {
         return (animalVisitedLocationsRepository.existsByLocation(location)) ||
                 (animalRepository.existsByLocation(location));
     }
