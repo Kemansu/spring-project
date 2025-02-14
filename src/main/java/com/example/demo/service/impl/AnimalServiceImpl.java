@@ -38,6 +38,13 @@ public class AnimalServiceImpl implements AnimalService {
     }
 
     @Override
+    public Integer getNumberOfAnimals() {
+        return animalRepository
+                .findAllByLifeStatus(LifeStatus.ALIVE)
+                .size();
+    }
+
+    @Override
     public List<AnimalDtoResponse> searchAnimalList(AnimalDtoSearchRequest request) {
 
         List<Animal> filtered = animalRepository.findAnimalsByParams(
@@ -52,6 +59,8 @@ public class AnimalServiceImpl implements AnimalService {
         int toIndex = Math.min(filtered.size(), request.getFrom() + request.getSize());
         return filtered.subList(request.getFrom(), toIndex)
                 .stream()
+                .skip(request.getFrom())
+                .limit(request.getSize())
                 .map(animalMapper::toAnimalDtoResponse)
                 .collect(Collectors.toList());
     }
@@ -97,7 +106,7 @@ public class AnimalServiceImpl implements AnimalService {
     @Transactional
     public AnimalDtoResponse updateAnimal(Long animalId, AnimalDtoUpdateRequest request) {
 
-        if (!isAllForUpdatingElementsExist(animalId, request.getChipperId(), request.getChippingLocationId())) {
+        if (!isAllForUpdatingElementsExist(request.getChipperId(), request.getChippingLocationId())) {
             throw new ObjectNotFoundException("");
         }
 
@@ -236,22 +245,21 @@ public class AnimalServiceImpl implements AnimalService {
                                                  Long chippingLocationId) {
 
 
-        return (animalTypes
+        return animalTypes
                 .stream()
                 .filter(type -> !animalTypeRepository.existsById(type))
-                .findFirst().isEmpty()) &&
+                .findFirst()
+                .isEmpty() &&
                 (accountRepository.existsById(chipperId) &&
                         (locationRepository.existsById(chippingLocationId)));
 
     }
 
-    private boolean isAllForUpdatingElementsExist(Long animalId,
-                                                 Integer chipperId,
+    private boolean isAllForUpdatingElementsExist(Integer chipperId,
                                                  Long chippingLocationId) {
 
-        return (animalRepository.existsById(animalId)) &&
-                (accountRepository.existsById(chipperId) &&
-                        (locationRepository.existsById(chippingLocationId)));
+        return (accountRepository.existsById(chipperId) &&
+                (locationRepository.existsById(chippingLocationId)));
 
     }
 

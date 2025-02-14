@@ -13,6 +13,8 @@ public interface AnimalService {
 
     Animal getAnimalById(Long id);
 
+    Integer getNumberOfAnimals();
+
     List<AnimalDtoResponse> searchAnimalList(AnimalDtoSearchRequest animalDtoSearchRequest);
 
     AnimalDtoResponse addAnimal(AnimalDtoCreateRequest animalDtoCreateRequest);

@@ -163,11 +163,12 @@ public class AnimalVisitedLocationsServiceImpl implements AnimalVisitedLocations
 
         existAnimal.addVisitedLocation(location);
 
-        return visitedLocationsMapper.toAnimalVisitedLocationsDtoResponse(
-                animalRepository.save(existAnimal).getVisitedLocations()
-                        .stream()
-                        .max(Comparator.comparing(AnimalVisitedLocations::getId))
-                        .orElseThrow(() -> new ObjectNotFoundException("")));
+        var animalVisitedLocations = animalRepository.save(existAnimal).getVisitedLocations()
+                .stream()
+                .max(Comparator.comparing(AnimalVisitedLocations::getId))
+                .orElseThrow(() -> new ObjectNotFoundException(""));
+
+        return visitedLocationsMapper.toAnimalVisitedLocationsDtoResponse(animalVisitedLocations);
     }
 
     private boolean isAnimalAlive(Long animalId) {

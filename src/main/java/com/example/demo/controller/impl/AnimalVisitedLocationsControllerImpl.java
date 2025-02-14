@@ -47,6 +47,7 @@ public class AnimalVisitedLocationsControllerImpl implements AnimalVisitedLocati
     public ResponseEntity<AnimalVisitedLocationsDtoResponse> addVisitedLocation(
             @PathVariable Long animalId,
             @PathVariable Long pointId) {
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(animalVisitedLocationsServiceImpl.addAnimalVisitedLocation(animalId, pointId));

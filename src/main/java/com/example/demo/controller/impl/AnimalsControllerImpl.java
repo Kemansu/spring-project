@@ -5,6 +5,7 @@ import com.example.demo.dto.animal.*;
 import com.example.demo.enums.Gender;
 import com.example.demo.enums.LifeStatus;
 import com.example.demo.mapper.AnimalMapper;
+import com.example.demo.model.Animal;
 import com.example.demo.service.AnimalService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,11 @@ public class AnimalsControllerImpl implements AnimalsController {
     @Override
     public ResponseEntity<AnimalDtoResponse> getAnimalById(@PathVariable Long animalId) {
         return ResponseEntity.ok(animalMapper.toAnimalDtoResponse(animalServiceImpl.getAnimalById(animalId)));
+    }
+
+    @Override
+    public ResponseEntity<Integer> getNumberOfAnimals() {
+        return ResponseEntity.ok(animalServiceImpl.getNumberOfAnimals());
     }
 
 

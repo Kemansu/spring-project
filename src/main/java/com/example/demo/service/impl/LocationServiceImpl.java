@@ -46,7 +46,9 @@ public class LocationServiceImpl implements LocationService {
             throw new ConflictDataException("");
         }
 
-        return locationMapper.toLocationDtoResponse(locationRepository.save(locationMapper.toLocation(request)));
+        var location = locationRepository.save(locationMapper.toLocation(request));
+
+        return locationMapper.toLocationDtoResponse(location);
     }
 
     @Override

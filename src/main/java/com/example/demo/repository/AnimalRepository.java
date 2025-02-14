@@ -23,6 +23,8 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
 
     boolean existsByAccount(Account account);
 
+    List<Animal> findAllByLifeStatus(LifeStatus lifeStatus);
+
     @Query("SELECT a FROM Animal a " +
             "WHERE (:chipperId IS NULL OR a.account.id = :chipperId)" +
             "AND (:startDateTime IS NULL OR a.chippingDateTime >= :startDateTime)" +
