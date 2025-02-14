@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  # Сервис приложения
+  webapi:
+    build: .
+    container_name: webapi
+    ports:
+      - "8091:8091"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5433/hibernate_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: den1980FG
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+  # Сервис автотестов
+  tests:
+    image: mrexpen/planet_olymp_phase1
+    container_name: tests
+    ports:
+      - "8090:8080"
+    depends_on:
+      - webapi
+    environment:
+      SERVER_URL: http://webapi:8091
+      STAGE: all

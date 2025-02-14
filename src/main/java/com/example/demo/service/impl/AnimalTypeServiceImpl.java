@@ -80,9 +80,7 @@ public class AnimalTypeServiceImpl implements AnimalTypeService {
                 .orElseThrow(() -> new ObjectNotFoundException("")))){
             throw new RequestValidationException("");
         }
-
         animalTypeRepository.deleteById(typeId);
     }
-
 
 }
